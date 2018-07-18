@@ -32,11 +32,7 @@ class ExampleSpider(scrapy.Spider):
                     print(title, href)
                     yield Request(href, callback=self.movie)
         # todo 翻页没做完
-        nexturl = response.xpath('//link[@rel="next"]/@href').extract()
-        if nexturl:
-            nexturl = nexturl[0]
-            req_url = baseurl + nexturl
-            yield Request(req_url, callback=self.parse)
+
 
         # response.xpath('//div[@class="co_area2"]/div[1]/p/strong/text()').extract()
         # print(homepage)
@@ -56,7 +52,7 @@ class ExampleSpider(scrapy.Spider):
 
     def movie(self, response):
         # page = response.xpath('//div[class="co_content8"]')
-        time.sleep(1)
+
         print('----------movie--------------')
         page = response.xpath('//table')
         for i in page:
@@ -67,3 +63,14 @@ class ExampleSpider(scrapy.Spider):
                 href = href.extract()[0]
                 name = name.extract()[0]
                 print(href, name)
+        nexturl = response.xpath('//div[@class="co_content8"]/div//a[7]/@href').extract()
+        if nexturl.xpath('text()').extract()[0] == "下一页":
+            nexturl = nexturl.xpath('@href')
+            if nexturl:
+                nexturl = nexturl[0]
+                req_url = response.url.rsplit("/", 1)[0] + "/" + nexturl
+                print("翻页", req_url)
+                yield Request(req_url, callback=self.movie)
+        else:
+            print('翻页失败')
+
