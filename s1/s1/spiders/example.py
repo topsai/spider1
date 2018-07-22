@@ -18,8 +18,11 @@ class ExampleSpider(scrapy.Spider):
         # print(response.xpath().extract())
         # 版块
         # //div[@class ='co_area2']/div[1]/p/em/a/@href
+        # 主页大板块
         homemodule = response.xpath('//div[@class="title_all"]/p')
         for i in homemodule:
+            if not i:
+                continue
             # print(i)
             title = i.xpath('strong/text()').extract()
             if title:
@@ -32,7 +35,6 @@ class ExampleSpider(scrapy.Spider):
                     print(title, href)
                     yield Request(href, callback=self.movie)
         # todo 翻页没做完
-
 
         # response.xpath('//div[@class="co_area2"]/div[1]/p/strong/text()').extract()
         # print(homepage)
@@ -54,23 +56,33 @@ class ExampleSpider(scrapy.Spider):
         # page = response.xpath('//div[class="co_content8"]')
 
         print('----------movie--------------')
-        page = response.xpath('//table')
-        for i in page:
-            temp = i.xpath('tr[2]/td[2]/b/a[2]')
-            href = temp.xpath('@href')
-            name = temp.xpath('text()')
-            if href and name:
-                href = href.extract()[0]
-                name = name.extract()[0]
-                print(href, name)
-        nexturl = response.xpath('//div[@class="co_content8"]/div//a[7]/@href').extract()
-        if nexturl.xpath('text()').extract()[0] == "下一页":
-            nexturl = nexturl.xpath('@href')
-            if nexturl:
-                nexturl = nexturl[0]
-                req_url = response.url.rsplit("/", 1)[0] + "/" + nexturl
-                print("翻页", req_url)
-                yield Request(req_url, callback=self.movie)
-        else:
-            print('翻页失败')
+        print(response.url)
+        # page = response.xpath('//table')
+        # for i in page:
+        #     temp = i.xpath('tr[2]/td[2]/b/a[2]')
+        #     href = temp.xpath('@href')
+        #     name = temp.xpath('text()')
+        #     if href and name:
+        #         href = href.extract()[0]
+        #         name = name.extract()[0]
+        #         print(href, name)
+        # 查询翻页
+        nexturl = response.xpath('//a[contains(text(), "下一页")]')
+        # 电影类型
+        title = response.xpath('//title/text()').extract()[0].split('_')[0]
 
+        try:
+            if nexturl.xpath('text()').extract()[0] == "下一页":
+                print('----翻页----')
+                nexturl = nexturl.xpath('@href')
+                if nexturl:
+                    nexturl = nexturl.extract()[0]
+                    nextpage = nexturl.strip(".html").rsplit("_", 1)[1]
+                    req_url = response.url.rsplit("/", 1)[0] + "/" + nexturl
+                    print("即将前往 ", title, " 第", nextpage, "页")
+                    yield Request(req_url, callback=self.movie)
+            else:
+                print('到底了')
+        except:
+            print('翻页失败-err')
+            print(response.url)
