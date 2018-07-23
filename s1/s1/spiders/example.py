@@ -19,21 +19,21 @@ class ExampleSpider(scrapy.Spider):
         # 版块
         # //div[@class ='co_area2']/div[1]/p/em/a/@href
         # 主页大板块
-        homemodule = response.xpath('//div[@class="title_all"]/p')
-        for i in homemodule:
-            if not i:
-                continue
-            # print(i)
-            title = i.xpath('strong/text()').extract()
-            if title:
-                href = i.xpath('em/a/@href').extract()
-                if href:
-                    title = title[0]
-                    href = href[0]
-                    if self.BaseUrl not in href:
-                        href = self.BaseUrl + href
-                    print(title, href)
-                    yield Request(href, callback=self.movie)
+        # homemodule = response.xpath('//div[@class="title_all"]/p')
+        # for i in homemodule:
+        #     if not i:
+        #         continue
+        #     # print(i)
+        #     title = i.xpath('strong/text()').extract()
+        #     if title:
+        #         href = i.xpath('em/a/@href').extract()
+        #         if href:
+        #             title = title[0]
+        #             href = href[0]
+        #             if self.BaseUrl not in href:
+        #                 href = self.BaseUrl + href
+        #             print(title, href)
+        #             yield Request(href, callback=self.movie)
         # todo 翻页没做完
 
         # response.xpath('//div[@class="co_area2"]/div[1]/p/strong/text()').extract()
@@ -48,6 +48,8 @@ class ExampleSpider(scrapy.Spider):
         # // *[ @ id = "header"] / div / div[3] / div[2] / div[2] / div[1] / div / div[2] / div[2] / ul / table / tbody / \
         # tr[2] / td[1] / a[2]
         # print(response.xpath('//div[@class="title_all"]/p/text()').extract())
+        href = "http://www.ygdy8.net/html/gndy/oumei/index.html"
+        return Request(href, callback=self.movie)
 
     def login(self):
         pass
@@ -57,15 +59,17 @@ class ExampleSpider(scrapy.Spider):
 
         print('----------movie--------------')
         print(response.url)
-        # page = response.xpath('//table')
-        # for i in page:
-        #     temp = i.xpath('tr[2]/td[2]/b/a[2]')
-        #     href = temp.xpath('@href')
-        #     name = temp.xpath('text()')
-        #     if href and name:
-        #         href = href.extract()[0]
-        #         name = name.extract()[0]
-        #         print(href, name)
+        page = response.xpath('//table')
+        for i in page:
+            temp = i.xpath('tr[2]/td[2]/b/a[2]')
+            href = temp.xpath('@href')
+            name = temp.xpath('text()')
+            if href and name:
+                href = href.extract()[0]
+                name = name.extract()[0]
+                # print(href, name)
+                print("找到电影：", name, href)
+                yield Request(self.BaseUrl+href, callback=self.info)
         # 查询翻页
         nexturl = response.xpath('//a[contains(text(), "下一页")]')
         # 电影类型
@@ -86,3 +90,10 @@ class ExampleSpider(scrapy.Spider):
         except:
             print('翻页失败-err')
             print(response.url)
+
+    def info(self, response):
+        print("info")
+        print(response.url)
+        xunlei = response.xpath('//table[@align="center"]/tbody/tr/td/a/text()').extract()[0]
+        image = response.xpath('//img/@src').extract()[1]
+        print(image, xunlei)
